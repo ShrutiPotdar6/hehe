@@ -1,31 +1,29 @@
-<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
-<title>Flappy</title>
-<style>html,body{height:100%;margin:0;background:#e0f2fe;overflow:hidden}canvas{display:block;margin:auto;background:#bae6fd;height:100%;width:100%}
-#hud{position:fixed;top:6px;left:8px;font:14px system-ui;color:#0f172a}</style></head><body>
-<div id="hud">Tap / Space to flap • R to restart</div><canvas id="c"></canvas>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Flappy Neo</title>
+<style>html,body{height:100%;margin:0;background:#0b1220;overflow:hidden}
+canvas{display:block;width:100%;height:100%}</style></head><body><canvas id="c"></canvas>
 <script>
-const cv=document.getElementById('c'),cx=cv.getContext('2d');
-function rs(){cv.width=innerWidth;cv.height=innerHeight}rs();addEventListener('resize',rs);
-let bird={x:cv.width*0.3,y:cv.height*0.5,v:0,r:14},g=0.5,flap=-8,score=0,alive=true;
-let pipes=[];let t=0;
-function addPipe(){const gap=Math.max(120,cv.height*0.18), topH=50+Math.random()*(cv.height-(gap+120)); pipes.push({x:cv.width,y:0,w:50,h:topH}); pipes.push({x:cv.width,y:topH+gap,w:50,h:cv.height-(topH+gap)});}
+const c=document.getElementById('c'),x=c.getContext('2d');let W,H;function rs(){W=c.width=innerWidth;H=c.height=innerHeight}rs();addEventListener('resize',rs);
+let t=0;const stars=Array.from({length:120},()=>({x:Math.random()*W,y:Math.random()*H,s:Math.random()*2}));
+function sky(){const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,"#111827");g.addColorStop(1,"#0b1220");x.fillStyle=g;x.fillRect(0,0,W,H);
+x.fillStyle="#94a3b8";for(const s of stars){x.globalAlpha=0.3+0.7*Math.random();x.fillRect(s.x,(s.y+t*s.s*0.02)%H,2,2);}x.globalAlpha=1;}
+let bird={x:W*0.3,y:H*0.5,v:0,r:14};let g=0.55,flap=-9,score=0,alive=true,pipes=[],bgCols=["#22c55e","#16a34a","#10b981"];
+function addPipe(){const gap=Math.max(130,H*0.2), topH=40+Math.random()*(H-(gap+120)); const col=bgCols[Math.floor(Math.random()*bgCols.length)];
+pipes.push({x:W,y:0,w:64,h:topH,c:col});pipes.push({x:W,y:topH+gap,w:64,h:H-(topH+gap),c:col});}
 addPipe();
-function step(){
-  t++; cx.fillStyle='#bae6fd'; cx.fillRect(0,0,cv.width,cv.height);
-  if(t%90===0) addPipe();
-  for(const p of pipes){ p.x-=3; cx.fillStyle='#0ea5e9'; cx.fillRect(p.x,p.y,p.w,p.h); }
-  pipes=pipes.filter(p=>p.x>-60);
-  bird.v+=g; bird.y+=bird.v;
-  cx.fillStyle='#f59e0b'; cx.beginPath(); cx.arc(bird.x,bird.y,bird.r,0,Math.PI*2); cx.fill();
-  for(const p of pipes){
-    if(bird.x+bird.r>p.x && bird.x-bird.r<p.x+p.w && bird.y+bird.r>p.y && bird.y-bird.r<p.y+p.h){ alive=false; }
-    if(p.y===0 && Math.abs(p.x-bird.x)<2) score++;
-  }
-  if(bird.y>cv.height-10 || bird.y<10) alive=false;
-  cx.fillStyle='#0f172a'; cx.font='20px system-ui'; cx.fillText('Score: '+score, 12, 26);
-  if(alive) requestAnimationFrame(step); else { cx.fillText('Game Over - press R', 12, 50); }
+function drawBird(){const r=bird.r;const grd=x.createRadialGradient(bird.x-6,bird.y-6,6,bird.x,bird.y,20);grd.addColorStop(0,"#fde68a");grd.addColorStop(1,"#f59e0b");x.fillStyle=grd;x.beginPath();x.arc(bird.x,bird.y,r,0,Math.PI*2);x.fill();
+x.fillStyle="#0f172a";x.beginPath();x.arc(bird.x+8,bird.y-4,3,0,Math.PI*2);x.fill();}
+function loop(){t++; sky();
+if(t%85===0) addPipe();
+for(const p of pipes){p.x-=3.6; x.fillStyle=p.c; x.fillRect(p.x,p.y,p.w,p.h);
+x.fillStyle="rgba(255,255,255,.06)"; x.fillRect(p.x+6,p.y,8,p.h);} pipes=pipes.filter(p=>p.x>-70);
+bird.v+=g; bird.y+=bird.v; drawBird();
+for(const p of pipes){ if(bird.x+bird.r>p.x && bird.x-bird.r<p.x+p.w && bird.y+bird.r>p.y && bird.y-bird.r<p.y+p.h) alive=false; if(p.y===0 && Math.abs(p.x-bird.x)<2) score++;}
+if(bird.y>H-8 || bird.y<8) alive=false;
+x.fillStyle="#e5e7eb"; x.font="700 22px system-ui"; x.fillText("Score: "+score, 14, 28);
+if(alive) requestAnimationFrame(loop); else {x.font="700 28px system-ui";x.fillText("Game Over — press R", 14, 60);}
 }
-requestAnimationFrame(step);
-addEventListener('keydown',e=>{if(e.code==='Space'){bird.v=flap;} if(e.key==='r'||e.key==='R'){location.reload();}});
+requestAnimationFrame(loop);
 addEventListener('pointerdown',()=>bird.v=flap);
+addEventListener('keydown',e=>{if(e.code==="Space")bird.v=flap;if(e.key==="r"||e.key==="R")location.reload();});
 </script></body></html>

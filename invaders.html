@@ -1,0 +1,46 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Space Invaders Lite</title>
+<style>html,body{height:100%;margin:0;background:#0b1220;overflow:hidden}canvas{display:block;width:100%;height:100%}</style></head><body><canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),x=c.getContext('2d');let W,H;function rs(){W=c.width=innerWidth;H=c.height=innerHeight}rs();addEventListener('resize',rs);
+let ship={x:W/2,y:H-60,w:40,h:16,v:8},L=false,R=false,shoot=false,bul=[],ebul=[],score=0,lives=3,over=false;
+const stars=Array.from({length:140},()=>({x:Math.random()*W,y:Math.random()*H,s:Math.random()*2}));
+function sky(){x.fillStyle="#0b1220";x.fillRect(0,0,W,H);x.fillStyle="#94a3b8";for(const s of stars){x.globalAlpha=0.4+0.6*Math.random();x.fillRect(s.x,(s.y+0.6)%H,2,2);}x.globalAlpha=1;}
+let inv=[],rows=4,cols=9,step=24,dir=1,drop=0;function resetInv(){inv=[];for(let i=0;i<rows;i++){for(let j=0;j<cols;j++){inv.push({x:100+j*60,y:80+i*50,w:36,h:20,hp:1});}}}resetInv();
+addEventListener('keydown',e=>{if(e.key==='ArrowLeft')L=true;if(e.key==='ArrowRight')R=true;if(e.key===' '){shoot=true} if(e.key==='r'||e.key==='R')location.reload();});
+addEventListener('keyup',e=>{if(e.key==='ArrowLeft')L=false;if(e.key==='ArrowRight')R=false;if(e.key===' ')shoot=false;});
+let shotCd=0,enemyCd=0;
+function loop(){
+  if(over){x.fillStyle="#e5e7eb";x.font="700 28px system-ui";x.fillText("Game Over — R to restart", 20, 50);return;}
+  sky();
+  if(L)ship.x-=ship.v;if(R)ship.x+=ship.v; ship.x=Math.max(30,Math.min(W-30,ship.x));
+  // ship
+  const grd=x.createLinearGradient(ship.x-20,ship.y,ship.x+20,ship.y+20);grd.addColorStop(0,"#60a5fa");grd.addColorStop(1,"#22d3ee");x.fillStyle=grd;x.fillRect(ship.x-20,ship.y,40,16);
+  // shoot
+  if(shotCd>0) shotCd--; if(shoot && shotCd===0){bul.push({x:ship.x,y:ship.y-10,v:-9}); shotCd=10;}
+  for(const b of bul){b.y+=b.v; x.fillStyle="#f97316"; x.fillRect(b.x-2,b.y,4,10);} bul=bul.filter(b=>b.y>-20);
+  // move invaders
+  let minX=1e9,maxX=-1e9; inv.forEach(e=>{minX=Math.min(minX,e.x);maxX=Math.max(maxX,e.x+e.w)});
+  if(minX<40 || maxX>W-40){dir*=-1; drop=12;}
+  for(const e of inv){e.x+=dir*2.2; if(drop){e.y+=drop}}
+  drop=0;
+  // draw invaders
+  for(const e of inv){if(e.hp<=0) continue; const g=x.createLinearGradient(e.x,e.y,e.x+e.w,e.y+e.h);g.addColorStop(0,"#a78bfa");g.addColorStop(1,"#6366f1");x.fillStyle=g;x.fillRect(e.x,e.y,e.w,e.h);
+    // collisions
+    for(const b of bul){if(b.x>e.x && b.x<e.x+e.w && b.y<e.y+e.h && b.y>e.y){e.hp=0; b.y=-999; score+=10;}}
+    if(Math.random()<0.002 && enemyCd<=0){ebul.push({x:e.x+e.w/2,y:e.y+e.h,v:4}); enemyCd=8;}
+  }
+  if(enemyCd>0) enemyCd--;
+  // enemy bullets
+  for(const b of ebul){b.y+=b.v; x.fillStyle="#eab308"; x.fillRect(b.x-2,b.y,4,8);
+    if(b.y>ship.y && Math.abs(b.x-ship.x)<20){lives--; b.y=H+99; if(lives<=0) over=true;}
+  }
+  ebul=ebul.filter(b=>b.y<H+20);
+  // HUD
+  x.fillStyle="#e5e7eb";x.font="700 18px system-ui";x.fillText("Score: "+score, 14, 24);x.fillText("Lives: "+lives, 14, 46);
+  inv=inv.filter(e=>e.hp>0);
+  if(!inv.length){x.fillStyle="#e5e7eb";x.font="700 26px system-ui";x.fillText("You win! R to play again",20,50);}
+  requestAnimationFrame(loop);
+}
+loop();
+</script></body></html>

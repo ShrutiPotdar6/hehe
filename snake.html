@@ -1,0 +1,38 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Glow Snake</title>
+<style>html,body{height:100%;margin:0;background:#0b1220;display:grid;place-items:center}canvas{background:#111827;border-radius:14px;box-shadow:0 20px 80px rgba(0,0,0,.4)}</style></head><body>
+<canvas id="c" width="560" height="560"></canvas>
+<script>
+const c=document.getElementById('c'),x=c.getContext('2d');const N=20,S=c.width/N;let dir=1, next=1, t=0, speed=7;
+let snake=[{x:5,y:10},{x:4,y:10},{x:3,y:10}]; let food=spawn(); let over=false;
+addEventListener('keydown',e=>{if(e.key==="ArrowUp"   && dir!==2) next=0;
+                               if(e.key==="ArrowRight"&& dir!==3) next=1;
+                               if(e.key==="ArrowDown" && dir!==0) next=2;
+                               if(e.key==="ArrowLeft" && dir!==1) next=3;
+                               if(e.key==="r"||e.key==="R") location.reload();});
+function spawn(){return {x:Math.floor(Math.random()*N),y:Math.floor(Math.random()*N)};}
+function step(){
+  if(over){x.fillStyle="#e5e7eb";x.font="700 26px system-ui";x.fillText("Game Over — R to restart", 120, 280);return;}
+  requestAnimationFrame(step);
+  const now=performance.now(); if(now-t<1000/speed) return; t=now; dir=next;
+  // move
+  const head={...snake[0]}; if(dir===0)head.y--; if(dir===1)head.x++; if(dir===2)head.y++; if(dir===3)head.x--;
+  head.x=(head.x+N)%N; head.y=(head.y+N)%N;
+  if(snake.some(s=>s.x===head.x&&s.y===head.y)) over=true;
+  snake.unshift(head);
+  if(head.x===food.x && head.y===food.y){ speed=Math.min(16, speed+0.2); food=spawn(); } else { snake.pop(); }
+  // draw
+  const bg=x.createLinearGradient(0,0,c.width,0); bg.addColorStop(0,"#0ea5e9"); bg.addColorStop(1,"#22c55e");
+  x.fillStyle="#0f172a"; x.fillRect(0,0,c.width,c.height);
+  // grid glow
+  x.strokeStyle="rgba(148,163,184,.15)"; for(let i=0;i<=N;i++){x.beginPath();x.moveTo(i*S,0);x.lineTo(i*S,c.height);x.stroke();x.beginPath();x.moveTo(0,i*S);x.lineTo(c.width,i*S);x.stroke();}
+  // food
+  x.fillStyle="#f97316"; x.beginPath(); x.arc(food.x*S+S/2, food.y*S+S/2, S*0.35, 0, Math.PI*2); x.fill();
+  // snake
+  for(let i=snake.length-1;i>=0;i--){const s=snake[i]; const g=x.createRadialGradient(s.x*S+S/2,s.y*S+S/2,2,s.x*S+S/2,s.y*S+S/2,S*0.6);
+    g.addColorStop(0, i===0?"#fef3c7":"#c7d2fe"); g.addColorStop(1, i===0?"#f59e0b":"#6366f1"); x.fillStyle=g; x.fillRect(s.x*S+4,s.y*S+4,S-8,S-8);}
+  // score
+  x.fillStyle="#e5e7eb";x.font="700 18px system-ui";x.fillText("Length: "+snake.length, 10, 24);
+}
+step();
+</script></body></html>
