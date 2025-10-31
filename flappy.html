@@ -1,0 +1,31 @@
+<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>Flappy</title>
+<style>html,body{height:100%;margin:0;background:#e0f2fe;overflow:hidden}canvas{display:block;margin:auto;background:#bae6fd;height:100%;width:100%}
+#hud{position:fixed;top:6px;left:8px;font:14px system-ui;color:#0f172a}</style></head><body>
+<div id="hud">Tap / Space to flap • R to restart</div><canvas id="c"></canvas>
+<script>
+const cv=document.getElementById('c'),cx=cv.getContext('2d');
+function rs(){cv.width=innerWidth;cv.height=innerHeight}rs();addEventListener('resize',rs);
+let bird={x:cv.width*0.3,y:cv.height*0.5,v:0,r:14},g=0.5,flap=-8,score=0,alive=true;
+let pipes=[];let t=0;
+function addPipe(){const gap=Math.max(120,cv.height*0.18), topH=50+Math.random()*(cv.height-(gap+120)); pipes.push({x:cv.width,y:0,w:50,h:topH}); pipes.push({x:cv.width,y:topH+gap,w:50,h:cv.height-(topH+gap)});}
+addPipe();
+function step(){
+  t++; cx.fillStyle='#bae6fd'; cx.fillRect(0,0,cv.width,cv.height);
+  if(t%90===0) addPipe();
+  for(const p of pipes){ p.x-=3; cx.fillStyle='#0ea5e9'; cx.fillRect(p.x,p.y,p.w,p.h); }
+  pipes=pipes.filter(p=>p.x>-60);
+  bird.v+=g; bird.y+=bird.v;
+  cx.fillStyle='#f59e0b'; cx.beginPath(); cx.arc(bird.x,bird.y,bird.r,0,Math.PI*2); cx.fill();
+  for(const p of pipes){
+    if(bird.x+bird.r>p.x && bird.x-bird.r<p.x+p.w && bird.y+bird.r>p.y && bird.y-bird.r<p.y+p.h){ alive=false; }
+    if(p.y===0 && Math.abs(p.x-bird.x)<2) score++;
+  }
+  if(bird.y>cv.height-10 || bird.y<10) alive=false;
+  cx.fillStyle='#0f172a'; cx.font='20px system-ui'; cx.fillText('Score: '+score, 12, 26);
+  if(alive) requestAnimationFrame(step); else { cx.fillText('Game Over - press R', 12, 50); }
+}
+requestAnimationFrame(step);
+addEventListener('keydown',e=>{if(e.code==='Space'){bird.v=flap;} if(e.key==='r'||e.key==='R'){location.reload();}});
+addEventListener('pointerdown',()=>bird.v=flap);
+</script></body></html>

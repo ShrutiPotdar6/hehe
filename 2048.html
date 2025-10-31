@@ -1,0 +1,24 @@
+<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>2048</title>
+<style>html,body{height:100%;margin:0;background:#fafaf9;display:grid;place-items:center;font-family:system-ui}
+#wrap{display:grid;gap:10px;background:#e5e7eb;border-radius:12px;padding:10px}
+.row{display:flex}.cell{width:70px;height:70px;margin:6px;background:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#0f172a}
+#hint{position:fixed;top:6px;left:8px;font:14px system-ui;color:#0f172a}</style></head><body>
+<div id="hint">Use Arrow Keys • R to restart</div><div id="wrap"></div>
+<script>
+let N=4,grid=[...Array(N)].map(()=>Array(N).fill(0));const g=document.getElementById('wrap');
+function draw(){g.innerHTML='';for(let i=0;i<N;i++){const r=document.createElement('div');r.className='row';for(let j=0;j<N;j++){const c=document.createElement('div');c.className='cell';c.textContent=grid[i][j]||'';c.style.background=grid[i][j]?h(grid[i][j]):'#fff';r.appendChild(c);}g.appendChild(r);}}
+function h(v){const m={2:'#fef9c3',4:'#fde68a',8:'#fbbf24',16:'#fb923c',32:'#f97316',64:'#ea580c',128:'#fca5a5',256:'#f87171',512:'#ef4444',1024:'#22c55e',2048:'#16a34a'};return m[v]||'#93c5fd';}
+function empty(){const a=[];for(let i=0;i<N;i++)for(let j=0;j<N;j++)if(!grid[i][j])a.push([i,j]);return a;}
+function add(){const e=empty();if(!e.length)return;const [i,j]=e[Math.floor(Math.random()*e.length)];grid[i][j]=Math.random()<0.9?2:4;}
+function zip(a){const b=a.filter(v=>v);for(let i=0;i<b.length-1;i++)if(b[i]===b[i+1]){b[i]*=2;b[i+1]=0;}const d=b.filter(v=>v);return [...d,...Array(N-d.length).fill(0)];}
+function rot(){grid=grid[0].map((_,i)=>grid.map(r=>r[i]).reverse());}
+function move(dir){let old=JSON.stringify(grid);if(dir==='L'){for(let i=0;i<N;i++)grid[i]=zip(grid[i]);}
+if(dir==='R'){for(let i=0;i<N;i++)grid[i]=zip(grid[i].reverse()).reverse();}
+if(dir==='U'){rot();for(let i=0;i<N;i++)grid[i]=zip(grid[i]);rot();rot();rot();}
+if(dir==='D'){rot();for(let i=0;i<N;i++)grid[i]=zip(grid[i].reverse()).reverse();rot();rot();rot();}
+if(JSON.stringify(grid)!==old){add();draw(); if(!empty().length && !canMove()) setTimeout(()=>{alert('Game over');location.reload();},10);}}
+function canMove(){for(let i=0;i<N;i++)for(let j=0;j<N;j++){if(!grid[i][j])return true;if(i<N-1&&grid[i][j]===grid[i+1][j])return true;if(j<N-1&&grid[i][j]===grid[i][j+1])return true;}return false;}
+add();add();draw();
+addEventListener('keydown',e=>{if(e.key==='ArrowLeft')move('L');if(e.key==='ArrowRight')move('R');if(e.key==='ArrowUp')move('U');if(e.key==='ArrowDown')move('D');if(e.key==='r'||e.key==='R')location.reload();});
+</script></body></html>

@@ -1,0 +1,32 @@
+<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>Platformer</title>
+<style>html,body{height:100%;margin:0;background:#bfdbfe;overflow:hidden}canvas{display:block;margin:auto;background:#93c5fd;height:100%;width:100%}
+#h{position:fixed;top:6px;left:8px;font:14px system-ui;color:#0f172a}</style></head><body>
+<div id="h">Arrows: move • Space: jump • R: reset</div><canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),x=c.getContext('2d');function r(){c.width=innerWidth;c.height=innerHeight}r();addEventListener('resize',r);
+let g=0.9,fric=0.82;let p={x:60,y:0,vx:0,vy:0,w:24,h:28,on:false};let L=0,R=0,J=0;
+addEventListener('keydown',e=>{if(e.key==='ArrowLeft')L=1;if(e.key==='ArrowRight')R=1;if(e.code==='Space')J=1;if(e.key==='r'||e.key==='R')location.reload();});
+addEventListener('keyup',e=>{if(e.key==='ArrowLeft')L=0;if(e.key==='ArrowRight')R=0;if(e.code==='Space')J=0;});
+function plats(){return[{x:0,y:c.height-30,w:c.width,h:30},{x:80,y:c.height-110,w:160,h:12},{x:280,y:c.height-170,w:80,h:12},{x:400,y:c.height-220,w:140,h:12},{x:590,y:c.height-150,w:110,h:12},{x:760,y:c.height-110,w:140,h:12}]}
+let PL=plats();const flag={x:820,y: c.height-135,w:10,h:30};
+function loop(){
+  x.clearRect(0,0,c.width,c.height);
+  p.vx += (R-L)*0.9; p.vx*=fric; p.vy+=g; if(J && p.on){p.vy=-15; p.on=false;}
+  p.x+=p.vx; p.y+=p.vy; p.on=false;
+  for(const a of PL){
+    if(p.x+p.w>a.x && p.x<a.x+a.w && p.y+p.h>a.y && p.y<a.y+a.h){
+      if(p.vy>0 && p.y+p.h-p.vy <= a.y){ p.y=a.y-p.h; p.vy=0; p.on=true; }
+      else if(p.vy<0 && p.y-p.vy >= a.y+a.h){ p.y=a.y+a.h; p.vy=0; }
+      else if(p.vx>0){ p.x=a.x-p.w; p.vx=0; }
+      else if(p.vx<0){ p.x=a.x+a.w; p.vx=0; }
+    }
+  }
+  x.fillStyle='#16a34a'; for(const a of PL){ x.fillRect(a.x,a.y,a.w,a.h); }
+  x.fillStyle='#0f172a'; x.fillRect(flag.x,flag.y,flag.w,flag.h); x.fillStyle='#f59e0b'; x.fillRect(flag.x,flag.y-10,18,10);
+  x.fillStyle='#1f2937'; x.fillRect(p.x,p.y,p.w,p.h);
+  if(p.x+18>flag.x && p.y<flag.y){ x.fillStyle='#0f172a'; x.font='22px system-ui'; x.fillText('You made it! Press R to replay', 20, 40); }
+  requestAnimationFrame(loop);
+}
+loop();
+</script></body></html>

@@ -1,0 +1,27 @@
+<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>Breakout</title>
+<style>html,body{height:100%;margin:0;background:#0b1220;overflow:hidden}canvas{display:block;margin:auto;background:#111827;height:100%;width:100%}
+#h{position:fixed;top:6px;left:8px;font:14px system-ui;color:#e5e7eb}</style></head><body>
+<div id="h">Move with ◀ ▶ • R to reset</div><canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),x=c.getContext('2d');function r(){c.width=innerWidth;c.height=innerHeight}r();addEventListener('resize',r);
+let w=c.width,h=c.height,px=w/2-50,py=h-40,pw=120,ph=12,blks=[],rows=5,cols=10,bx=w/2,by=h/2,bvx=4,bvy=-5,br=8,L=false,R=false;
+function reset(){blks=[];for(let i=0;i<rows;i++)for(let j=0;j<cols;j++){let bw=(w-80)/cols-6;blks.push({x:40+j*((w-80)/cols),y:60+i*24,w:bw,h:18,hp:1+Math.floor(i/2)});}}
+reset();
+addEventListener('keydown',e=>{if(e.key==='ArrowLeft')L=true; if(e.key==='ArrowRight')R=true; if(e.key==='r'||e.key==='R')location.reload();});
+addEventListener('keyup',e=>{if(e.key==='ArrowLeft')L=false; if(e.key==='ArrowRight')R=false;});
+function loop(){
+  w=c.width;h=c.height;x.clearRect(0,0,w,h);
+  if(L)px-=8;if(R)px+=8;px=Math.max(0,Math.min(w-pw,px));
+  x.fillStyle='#f59e0b';x.fillRect(px,py,pw,ph);
+  bx+=bvx;by+=bvy; if(bx<br||bx>w-br)bvx*=-1; if(by<br)bvy*=-1;
+  if(by>py-br && bx>px && bx<px+pw){bvy*=-1; by=py-br; bvx+=(Math.random()-.5)*1.2;}
+  if(by>h+50){bx=w/2;by=h/2;bvx=(Math.random()>.5?4:-4);bvy=-5;}
+  x.fillStyle='#a78bfa';x.beginPath();x.arc(bx,by,br,0,Math.PI*2);x.fill();
+  let alive=false;
+  for(const b of blks){ if(!b.hp) continue; alive=true; x.fillStyle=b.hp>1?'#60a5fa':'#22c55e'; x.fillRect(b.x,b.y,b.w,b.h);
+    if(bx+br>b.x && bx-br<b.x+b.w && by+br>b.y && by-br<b.y+b.h){ bvy*=-1; b.hp--; } }
+  if(!alive){ x.fillStyle='#e5e7eb'; x.font='24px system-ui'; x.fillText('You cleared them! Press R to restart', 20, 40); }
+  requestAnimationFrame(loop);
+} loop();
+</script></body></html>

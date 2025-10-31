@@ -1,0 +1,17 @@
+<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>Tic‑Tac‑Toe</title>
+<style>html,body{height:100%;margin:0;display:grid;place-items:center;background:#fff7ed;font-family:system-ui}
+#b{display:grid;grid-template-columns:repeat(3,100px);gap:8px}button{width:100px;height:100px;font-size:36px;border-radius:12px;border:1px solid #e2e8f0;background:#fff;cursor:pointer}</style></head><body>
+<div id="b"></div>
+<script>
+const b=document.getElementById('b');let board=Array(9).fill(''),human='X',ai='O';
+for(let i=0;i<9;i++){const bt=document.createElement('button');bt.onclick=()=>play(i,bt);b.appendChild(bt);}
+function play(i,bt){ if(board[i])return; board[i]=human; bt.textContent=human; if(check(human))return end('You win!'); if(board.every(v=>v))return end('Draw'); aiMove(); }
+function end(msg){setTimeout(()=>{alert(msg); location.reload();},50);}
+function aiMove(){let idx=bestMove(); board[idx]=ai; b.children[idx].textContent=ai; if(check(ai)) end('AI wins');}
+function bestMove(){const empty=board.map((v,i)=>v?null:i).filter(v=>v!==null);
+for(const i of empty){board[i]=ai;if(check(ai)){board[i]='';return i}board[i]='';}
+for(const i of empty){board[i]=human;if(check(human)){board[i]='';return i}board[i]='';}
+if(empty.includes(4)) return 4; for(const k of [0,2,6,8]) if(empty.includes(k)) return k; return empty[0];}
+function check(p){const w=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];return w.some(a=>a.every(i=>board[i]===p));}
+</script></body></html>
