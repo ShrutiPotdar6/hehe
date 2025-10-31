@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Playground • Floating Bubbles</title>
+<meta name="description" content="Floating bubbles with images. Click to open a mini-game in a popup window. Back to portfolio button on top."/>
+<style>
+:root{
+  /* ~10 cm ≈ 380px on desktop */
+  --bubble-size: 380px;
+  --bubble-size-md: 260px;
+  --bubble-size-sm: 180px;
+  --bg1: #ffffff;
+  --bg2: #f5f7ff;
+  --ink: #0f172a;
+  --muted: #64748b;
+  --ring: rgba(124,58,237,.35);
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body{
+  margin:0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--bg1), var(--bg2));
+  overflow: hidden;
+}
+
+/* Top bar */
+.topbar{
+  position: fixed; inset-inline: 0; top: 0; height: 64px;
+  display:flex; align-items:center; gap:12px; padding:0 16px; z-index:50;
+  background: linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,255,255,.6));
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(2,6,23,.06);
+}
+.back{
+  display:inline-flex; align-items:center; gap:10px; text-decoration:none; color: var(--ink);
+  border: 1px solid rgba(2,6,23,.08); border-radius: 999px; padding:8px 12px; background:#fff;
+  box-shadow: 0 6px 20px rgba(15,23,42,.05);
+}
+.back:focus-visible{ outline: 3px solid var(--ring); outline-offset: 2px; }
+.back svg{ width:18px; height:18px }
+.hint{ margin-left:auto; font-size:14px; color: var(--muted); }
+
+/* Stage */
+.stage{ position:relative; width:100%; height:100%; }
+.ocean{ position:absolute; inset:0; overflow:hidden; }
+
+/* Bubbles */
+.bubble{
+  position:absolute; display:inline-grid; place-items:center; border-radius:9999px; cursor:pointer; border:none; background:#fff;
+  width: var(--bubble-size); height: var(--bubble-size);
+  box-shadow: 0 12px 60px rgba(15,23,42,.1), inset 0 0 0 2px rgba(255,255,255,.7);
+  transition: transform .25s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.bubble:hover{ transform: translateY(-6px) scale(1.02); }
+.bubble:focus-visible{ outline: 4px solid var(--ring); outline-offset: 2px; }
+.bubble::before{
+  content:""; position:absolute; inset:0; border-radius:inherit;
+  background: radial-gradient(180px 180px at 25% 20%, rgba(255,255,255,.85), transparent 60%);
+  pointer-events:none; mix-blend-mode: screen;
+}
+.bubble img{ width:82%; height:82%; object-fit:cover; border-radius:999px; box-shadow: inset 0 0 0 10px rgba(255,255,255,.65); user-select:none; -webkit-user-drag:none; }
+
+.label{
+  position:absolute; bottom:-38px; left:50%; transform:translateX(-50%);
+  background: rgba(255,255,255,.9); border:1px solid rgba(2,6,23,.08); padding:6px 10px; border-radius:999px;
+  font-size:14px; color: var(--muted); white-space:nowrap; box-shadow: 0 6px 24px rgba(15,23,42,.08);
+  pointer-events:none;
+}
+
+/* Floating */
+@keyframes rise {
+  0% { transform: translateY(60vh) translateX(var(--drift)); opacity: .0 }
+  8% { opacity: 1 }
+  100% { transform: translateY(-70vh) translateX(calc(var(--drift) * -1)); opacity: .95 }
+}
+
+@media (max-width: 1280px){ .bubble{ width: var(--bubble-size-md); height: var(--bubble-size-md);} }
+@media (max-width: 720px){ .bubble{ width: var(--bubble-size-sm); height: var(--bubble-size-sm);} .label,.hint{ display:none } }
+
+@media (prefers-reduced-motion: reduce){
+  .bubble{ transition:none; animation:none !important; }
+}
+
+/* Modal popup */
+.modal{
+  position: fixed; inset:0; display:none; place-items:center; background: rgba(15,23,42,.35);
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+  z-index: 100;
+}
+.modal[open]{ display:grid; }
+.dialog{
+  width: min(92vw, 960px);
+  height: min(80vh, 640px);
+  background:#fff; border-radius: 16px; overflow:hidden; box-shadow: 0 30px 120px rgba(0,0,0,.25);
+  display:flex; flex-direction:column;
+}
+.modalbar{
+  height: 48px; display: flex; align-items:center; gap:8px; padding:0 10px; border-bottom:1px solid rgba(2,6,23,.06);
+}
+.modalbar .title{ font-size:14px; color: var(--muted); }
+.modalbar .spacer{ flex:1 }
+.iconbtn{
+  border:1px solid rgba(2,6,23,.08); background:#fff; border-radius:10px; height:32px; padding:0 10px; display:inline-flex; align-items:center; gap:8px; cursor:pointer;
+}
+.iconbtn:hover{ background:#f8fafc; }
+.iconbtn:focus-visible{ outline: 3px solid var(--ring); outline-offset: 2px; }
+.viewer{
+  flex:1; background:#0b1220; display:grid; place-items:center;
+}
+.viewer iframe{
+  width: 100%; height: 100%; border:0; background:#0b1220;
+}
+.sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+.credit{ position: fixed; right:10px; bottom:10px; font-size:12px; color: var(--muted); opacity:.7 }
+</style>
+</head>
+<body>
+  <header class="topbar" role="banner">
+    <a class="back" id="backLink" href="#" aria-label="Back to portfolio">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      <span>Back to portfolio</span>
+    </a>
+    <div class="hint">Click a bubble to play ∙ press Esc to close</div>
+  </header>
+
+  <main class="stage" role="main" aria-describedby="pageHint">
+    <p id="pageHint" class="sr-only">Floating bubbles with images. Activate a bubble to open a popup window with an embedded mini-game.</p>
+    <div class="ocean" id="ocean" aria-live="polite"></div>
+  </main>
+
+  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modaltitle">
+    <div class="dialog">
+      <div class="modalbar">
+        <div id="modaltitle" class="title">Mini‑game</div>
+        <div class="spacer"></div>
+        <button id="openNew" class="iconbtn" type="button" title="Open in new tab">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3h7v7"/><path d="M10 14L21 3"/><path d="M5 7v14h14"/></svg>
+          <span>Open</span>
+        </button>
+        <button id="closeModal" class="iconbtn" type="button" title="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          <span>Close</span>
+        </button>
+      </div>
+      <div class="viewer">
+        <iframe id="gameFrame" src="about:blank" allow="autoplay; fullscreen"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <div class="credit">Playground • Floating Bubbles</div>
+
+<script>
+// === CONFIG ===
+const PORTFOLIO_URL = "https://your-portfolio-url.example"; // change this
+const GAMES = [
+  { label: "Hana Universe", href: "https://example.com/hana-game", img: "assets/hana.png", alt: "Hana – starry UI scene" },
+  { label: "Skynn Mixer",   href: "https://example.com/skynn-game", img: "assets/skynn.png", alt: "Skynn colors" },
+  { label: "Dino Dance",    href: "https://example.com/dino-game", img: "assets/dino.png", alt: "Dino device" },
+  { label: "Brely Rain",    href: "https://example.com/brely-game", img: "assets/brely.png", alt: "Brely umbrella" },
+  { label: "Saaho Café",    href: "https://example.com/saaho-game", img: "assets/saaho.png", alt: "Café vibe" },
+  { label: "Motion Bits",   href: "https://example.com/motion", img: "assets/motion.png", alt: "UI motion" },
+  { label: "Quiet Posters", href: "https://example.com/posters", img: "assets/posters.png", alt: "Poster grid" },
+  { label: "K‑Diary",       href: "https://example.com/kdiary", img: "assets/k‑diary.png", alt: "Notebook with stickers" },
+  { label: "Photo Bloom",   href: "https://example.com/bloom", img: "assets/bloom.png", alt: "Bloom photo" },
+  { label: "Idea Catcher",  href: "https://example.com/ideas", img: "assets/ideas.png", alt: "Abstract shapes" }
+];
+const SETTINGS = {
+  minDuration: 18,
+  maxDuration: 36,
+  minDrift: -120,
+  maxDrift: 120,
+  minDelay: 0,
+  maxDelay: 12,
+  density: 1.0
+};
+
+// === ELEMENTS ===
+const ocean = document.getElementById('ocean');
+const stage = document.querySelector('.stage');
+const backLink = document.getElementById('backLink');
+const modal = document.getElementById('modal');
+const gameFrame = document.getElementById('gameFrame');
+const closeModal = document.getElementById('closeModal');
+const openNew = document.getElementById('openNew');
+const modalTitle = document.getElementById('modaltitle');
+backLink.href = PORTFOLIO_URL;
+
+// === HELPERS ===
+function rand(min, max){ return Math.random() * (max - min) + min; }
+
+function createBubble(entry){
+  const btn = document.createElement('button');
+  btn.className = 'bubble';
+  btn.type = 'button';
+  btn.setAttribute('aria-label', `${entry.label} – open mini game`);
+  btn.style.left = (Math.random() * 80 + 5) + '%';
+  btn.style.bottom = (Math.random() * 40 - 10) + 'vh';
+
+  const duration = rand(SETTINGS.minDuration, SETTINGS.maxDuration).toFixed(2);
+  const delay = rand(SETTINGS.minDelay, SETTINGS.maxDelay).toFixed(2);
+  const drift = rand(SETTINGS.minDrift, SETTINGS.maxDrift) + 'px';
+  btn.style.setProperty('--drift', drift);
+  btn.style.animation = `rise ${duration}s linear ${delay}s infinite`;
+
+  const img = document.createElement('img');
+  img.decoding = 'async'; img.loading = 'lazy';
+  img.src = entry.img; img.alt = entry.alt || entry.label;
+  btn.appendChild(img);
+
+  const tag = document.createElement('div');
+  tag.className = 'label'; tag.textContent = entry.label;
+  btn.appendChild(tag);
+
+  btn.addEventListener('click', () => openModal(entry));
+  btn.addEventListener('keydown', (ev) => {
+    if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); openModal(entry); }
+  });
+  btn.addEventListener('animationiteration', () => {
+    btn.style.left = (Math.random() * 80 + 5) + '%';
+    btn.style.setProperty('--drift', rand(SETTINGS.minDrift, SETTINGS.maxDrift) + 'px');
+  });
+
+  return btn;
+}
+
+function populate(){
+  const count = Math.max(1, Math.round(GAMES.length * SETTINGS.density));
+  const pool = [];
+  for(let i=0;i<count;i++) pool.push(GAMES[i % GAMES.length]);
+  pool.sort(() => Math.random() - .5);
+  pool.forEach(e => ocean.appendChild(createBubble(e)));
+}
+
+function openModal(entry){
+  modalTitle.textContent = entry.label;
+  gameFrame.src = entry.href;  // embedded game/app - must allow embedding
+  openNew.onclick = () => window.open(entry.href, '_blank', 'noopener');
+  modal.setAttribute('open','');
+  // focus trap start
+  openNew.focus();
+}
+
+function closeModalNow(){
+  gameFrame.src = 'about:blank';
+  modal.removeAttribute('open');
+}
+
+closeModal.addEventListener('click', closeModalNow);
+modal.addEventListener('click', (e) => { if(e.target === modal){ closeModalNow(); } });
+document.addEventListener('keydown', (e) => { if(e.key === 'Escape' && modal.hasAttribute('open')) closeModalNow(); });
+
+// parallax
+stage.addEventListener('pointermove', (e) => {
+  const x = (e.clientX / window.innerWidth) - 0.5;
+  const y = (e.clientY / window.innerHeight) - 0.5;
+  ocean.style.transform = `translate(${x * 10}px, ${y * 8}px)`;
+});
+
+// preload + go
+(function init(){
+  // allow dynamic back link via ?back=
+  try{
+    const params = new URLSearchParams(window.location.search);
+    const back = params.get('back');
+    if(back){ backLink.href = back; }
+  }catch(e){}
+  // preload images
+  GAMES.forEach(g => { const im = new Image(); im.src = g.img; });
+  populate();
+})();
+</script>
+</body>
+</html>
