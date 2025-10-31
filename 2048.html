@@ -1,24 +1,32 @@
-<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
-<title>2048</title>
-<style>html,body{height:100%;margin:0;background:#fafaf9;display:grid;place-items:center;font-family:system-ui}
-#wrap{display:grid;gap:10px;background:#e5e7eb;border-radius:12px;padding:10px}
-.row{display:flex}.cell{width:70px;height:70px;margin:6px;background:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#0f172a}
-#hint{position:fixed;top:6px;left:8px;font:14px system-ui;color:#0f172a}</style></head><body>
-<div id="hint">Use Arrow Keys • R to restart</div><div id="wrap"></div>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tiny Tetris</title>
+<style>html,body{height:100%;margin:0;background:#0b1220;display:grid;place-items:center}canvas{background:#111827;border-radius:10px;box-shadow:0 20px 80px rgba(0,0,0,.45)}</style></head><body>
+<canvas id="c" width="300" height="600"></canvas>
 <script>
-let N=4,grid=[...Array(N)].map(()=>Array(N).fill(0));const g=document.getElementById('wrap');
-function draw(){g.innerHTML='';for(let i=0;i<N;i++){const r=document.createElement('div');r.className='row';for(let j=0;j<N;j++){const c=document.createElement('div');c.className='cell';c.textContent=grid[i][j]||'';c.style.background=grid[i][j]?h(grid[i][j]):'#fff';r.appendChild(c);}g.appendChild(r);}}
-function h(v){const m={2:'#fef9c3',4:'#fde68a',8:'#fbbf24',16:'#fb923c',32:'#f97316',64:'#ea580c',128:'#fca5a5',256:'#f87171',512:'#ef4444',1024:'#22c55e',2048:'#16a34a'};return m[v]||'#93c5fd';}
-function empty(){const a=[];for(let i=0;i<N;i++)for(let j=0;j<N;j++)if(!grid[i][j])a.push([i,j]);return a;}
-function add(){const e=empty();if(!e.length)return;const [i,j]=e[Math.floor(Math.random()*e.length)];grid[i][j]=Math.random()<0.9?2:4;}
-function zip(a){const b=a.filter(v=>v);for(let i=0;i<b.length-1;i++)if(b[i]===b[i+1]){b[i]*=2;b[i+1]=0;}const d=b.filter(v=>v);return [...d,...Array(N-d.length).fill(0)];}
-function rot(){grid=grid[0].map((_,i)=>grid.map(r=>r[i]).reverse());}
-function move(dir){let old=JSON.stringify(grid);if(dir==='L'){for(let i=0;i<N;i++)grid[i]=zip(grid[i]);}
-if(dir==='R'){for(let i=0;i<N;i++)grid[i]=zip(grid[i].reverse()).reverse();}
-if(dir==='U'){rot();for(let i=0;i<N;i++)grid[i]=zip(grid[i]);rot();rot();rot();}
-if(dir==='D'){rot();for(let i=0;i<N;i++)grid[i]=zip(grid[i].reverse()).reverse();rot();rot();rot();}
-if(JSON.stringify(grid)!==old){add();draw(); if(!empty().length && !canMove()) setTimeout(()=>{alert('Game over');location.reload();},10);}}
-function canMove(){for(let i=0;i<N;i++)for(let j=0;j<N;j++){if(!grid[i][j])return true;if(i<N-1&&grid[i][j]===grid[i+1][j])return true;if(j<N-1&&grid[i][j]===grid[i][j+1])return true;}return false;}
-add();add();draw();
-addEventListener('keydown',e=>{if(e.key==='ArrowLeft')move('L');if(e.key==='ArrowRight')move('R');if(e.key==='ArrowUp')move('U');if(e.key==='ArrowDown')move('D');if(e.key==='r'||e.key==='R')location.reload();});
+const c=document.getElementById('c'),x=c.getContext('2d');const COLS=10,ROWS=20,S=c.width/COLS;
+const COLORS=["#22d3ee","#60a5fa","#a78bfa","#22c55e","#f59e0b","#ef4444","#f472b6"];
+const SHAPES=[[[1,1,1,1]],[[1,1],[1,1]],[[0,1,0],[1,1,1]],[[1,0,0],[1,1,1]],[[0,0,1],[1,1,1]],[[1,1,0],[0,1,1]],[[0,1,1],[1,1,0]]];
+let grid=[...Array(ROWS)].map(()=>Array(COLS).fill(0));
+let cur=null, x0=3, y0=0, color="#60a5fa", over=false, score=0, dropMs=600, last=0;
+function newPiece(){const i=Math.floor(Math.random()*SHAPES.length);cur=SHAPES[i].map(r=>r.slice());color=COLORS[i];x0=3;y0=0;if(collide(x0,y0,cur)){over=true;}}
+function rot(m){return m[0].map((_,i)=>m.map(r=>r[i]).reverse());}
+function collide(px,py,mat){for(let y=0;y<mat.length;y++)for(let x1=0;x1<mat[0].length;x1++)if(mat[y][x1]){const gx=px+x1,gy=py+y; if(gx<0||gx>=COLS||gy>=ROWS|| (gy>=0&&grid[gy][gx])) return true;} return false;}
+function merge(){for(let y=0;y<cur.length;y++)for(let x1=0;x1<cur[0].length;x1++)if(cur[y][x1]) grid[y0+y][x0+x1]=color;}
+function clearLines(){let lines=0;for(let y=ROWS-1;y>=0;y--){if(grid[y].every(v=>v)){grid.splice(y,1);grid.unshift(Array(COLS).fill(0));lines++;y++;}} if(lines){score+=lines*100; dropMs=Math.max(120, dropMs-20*lines);}}
+function draw(){x.fillStyle="#0f172a";x.fillRect(0,0,c.width,c.height);
+x.strokeStyle="rgba(148,163,184,.15)";for(let i=0;i<=COLS;i++){x.beginPath();x.moveTo(i*S,0);x.lineTo(i*S,c.height);x.stroke();}
+for(let i=0;i<=ROWS;i++){x.beginPath();x.moveTo(0,i*S);x.lineTo(c.width,i*S);x.stroke();}
+for(let y=0;y<ROWS;y++)for(let x1=0;x1<COLS;x1++){const v=grid[y][x1]; if(v){x.fillStyle=v;x.fillRect(x1*S+1,y*S+1,S-2,S-2);}}
+if(cur){x.fillStyle=color;for(let y=0;y<cur.length;y++)for(let x1=0;x1<cur[0].length;x1++)if(cur[y][x1])x.fillRect((x0+x1)*S+1,(y0+y)*S+1,S-2,S-2);}
+x.fillStyle="#e5e7eb";x.font="700 16px system-ui";x.fillText("Score: "+score,10,20);
+if(over){x.font="700 22px system-ui";x.fillText("Game Over — R to restart",10,44);}
+}
+function drop(){if(!cur) newPiece(); if(!over){ if(!collide(x0,y0+1,cur)){y0++;} else {merge();clearLines();newPiece();}}}
+function tick(ts){if(ts-last>dropMs){drop();last=ts;}draw();requestAnimationFrame(tick);} newPiece(); tick(0);
+addEventListener('keydown',e=>{if(over && (e.key==='r'||e.key==='R'))location.reload();
+if(e.key==='ArrowLeft' && !collide(x0-1,y0,cur)) x0--;
+if(e.key==='ArrowRight'&& !collide(x0+1,y0,cur)) x0++;
+if(e.key==='ArrowDown' ) drop();
+if(e.key==='ArrowUp'){const m=rot(cur); if(!collide(x0,y0,m)) cur=m;}
+});
 </script></body></html>
